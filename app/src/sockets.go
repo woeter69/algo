@@ -1,9 +1,5 @@
 package main
 
-import (
-	"strconv"
-)
-
 // ============= WHAT IS GO? =============
 // Go is a programming language by Google that's:
 // - FAST: Compiled, not interpreted like Python
@@ -22,17 +18,3 @@ import (
 
 // WebSocket upgrader and hub variables are defined in main.go
 
-// Helper function to convert interface{} to int for channel IDs
-func convertToInt(value interface{}) int {
-	switch v := value.(type) {
-	case int:
-		return v
-	case float64:
-		return int(v)
-	case string:
-		if id, err := strconv.Atoi(v); err == nil {
-			return id
-		}
-	}
-	return 0 // Default fallback
-}

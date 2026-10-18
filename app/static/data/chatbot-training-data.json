@@ -203,10 +203,8 @@
     "js/": "JavaScript files for interactivity",
     "images/": "Platform images and assets",
     "data/": {
-      "cities-name-list.json": "List of Indian cities for profile completion",
-      "fake-alumni-data.json": "Sample alumni data for testing"
-    }
-  },
+      "cities-name-list.json": "List of Indian cities for profile completion"
+    }  },
   "key_features": {
     "user_management": {
       "registration": "Email-based registration with verification",

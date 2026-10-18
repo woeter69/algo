@@ -21,10 +21,10 @@
     "rebuild:prod": "npm run clean:all && npm run build:prod"
   },
   "devDependencies": {
-    "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/typography": "^0.5.18",
-    "@types/node": "^20.0.0",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.9.2"
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^20.19.40",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3"
   }
 }

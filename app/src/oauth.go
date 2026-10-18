@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -82,11 +83,11 @@ func NewGoogleOAuth(db *sql.DB) *GoogleOAuth {
 }
 
 // setupOAuthRoutes configures OAuth endpoints
-func (oauth *GoogleOAuth) setupOAuthRoutes() {
-	http.HandleFunc("/auth/google", oauth.handleGoogleLogin)
-	http.HandleFunc("/auth/google/callback", oauth.handleGoogleCallback)
-	http.HandleFunc("/auth/logout", oauth.handleLogout)
-	http.HandleFunc("/auth/user", oauth.handleGetUser)
+func (oauth *GoogleOAuth) setupOAuthRoutes(r *mux.Router) {
+	r.HandleFunc("/auth/google", oauth.handleGoogleLogin)
+	r.HandleFunc("/auth/google/callback", oauth.handleGoogleCallback)
+	r.HandleFunc("/auth/logout", oauth.handleLogout)
+	r.HandleFunc("/auth/user", oauth.handleGetUser)
 
 	log.Println("🔐 OAuth endpoints configured:")
 	log.Println("   🚀 /auth/google - Start Google OAuth")
