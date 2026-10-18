@@ -120,7 +120,7 @@
   "development_info": [
     {
       "question": "How can I contribute to this project?",
-      "answer": "This is a Smart India Hackathon 2025 project. The repository is at github.com/Woeter69/sih-project-2025. Contributors can open issues or submit pull requests for improvements."
+      "answer": "This is the AlumniGo 2026 platform. The repository is available on GitHub. Contributors can open issues or submit pull requests for improvements."
     },
     {
       "question": "What's in the suggestions.txt file?",
@@ -128,7 +128,7 @@
     },
     {
       "question": "Is this project open source?",
-      "answer": "Yes, this project is part of Smart India Hackathon 2025 and appears to be open source, welcoming contributions and improvements from the community."
+      "answer": "Yes, AlumniGo is an open platform welcoming contributions and improvements from the community."
     }
   ]
 }

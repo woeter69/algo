@@ -15,11 +15,11 @@ else
     echo "❌ Go server build failed"
     exit 1
 fi
-cd ../../..
+cd ../..
 
 # Test Python syntax
 echo "2️⃣ Testing Python Flask Server syntax..."
-if python3 -m py_compile app/src/app.py; then
+if .venv/bin/python -m py_compile app/src/run.py; then
     echo "✅ Python server syntax is valid"
 else
     echo "❌ Python server has syntax errors"
@@ -38,11 +38,11 @@ else
     echo "   ❌ Go dependencies have issues"
     exit 1
 fi
-cd ../../..
+cd ../..
 
 # Check Python dependencies (basic imports)
 echo "   🔍 Python dependencies..."
-if python3 -c "import flask, psycopg2, bcrypt"; then
+if .venv/bin/python -c "import flask, psycopg2, bcrypt"; then
     echo "   ✅ Python dependencies available"
 else
     echo "   ❌ Python dependencies missing"

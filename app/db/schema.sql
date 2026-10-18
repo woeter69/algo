@@ -3,6 +3,19 @@
 
 -- Then connect to alumni_platform and run the rest:
 
+-- Communities table (referenced by users and admin_permissions)
+CREATE TABLE communities (
+    community_id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    college_code VARCHAR(10),
+    location VARCHAR(255),
+    established_year INT,
+    website VARCHAR(255),
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Users table
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
@@ -44,6 +57,8 @@ CREATE TABLE users (
     FOREIGN KEY (community_id) REFERENCES communities(community_id) ON DELETE SET NULL,
     FOREIGN KEY (verified_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
+
+ALTER TABLE communities ADD CONSTRAINT fk_communities_created_by FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL;
 
 -- Create indexes for users table
 CREATE INDEX idx_users_community ON users(community_id);
@@ -130,8 +145,15 @@ CREATE TABLE contacts (
     phone TEXT,
     subject TEXT,
     message TEXT NOT NULL,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'resolved')),
+    resolved_by INT,
+    resolved_at TIMESTAMP,
+    resolution_notes TEXT,
+    FOREIGN KEY (resolved_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
+
+CREATE INDEX idx_contacts_status ON contacts(status);
 
 CREATE TABLE work_experience (
     exp_id SERIAL PRIMARY KEY,
@@ -151,20 +173,6 @@ CREATE TABLE messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- Communities table (referenced by admin_permissions)
-CREATE TABLE communities (
-    community_id SERIAL PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
-    description TEXT,
-    college_code VARCHAR(10),
-    location VARCHAR(255),
-    established_year INT,
-    website VARCHAR(255),
-    created_by INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
 -- Admin permissions table

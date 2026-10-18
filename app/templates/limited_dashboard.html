@@ -28,7 +28,7 @@
             <li><a href="{{ url_for('core.home') }}">Home</a></li>
             <li><a href="{{ url_for('core.about') }}">About Us</a></li>
             <li><a href="{{ url_for('core.contact') }}">Contact</a></li>
-            <li><a href="{{ url_for('profile_redirect') }}">Profile</a></li>
+            <li><a href="{{ url_for('profile.profile_redirect') }}">Profile</a></li>
           </ul>
           <div class="user-profile" id="userprofile">
             <img
@@ -105,7 +105,7 @@
                 >
                 {% else %}
                 <a
-                  href="{{ url_for('verification_request') }}"
+                  href="{{ url_for('dashboard.verification_request') }}"
                   class="verify-btn"
                 >
                   <i class="fas fa-user-check"></i>
@@ -270,7 +270,7 @@
             <div class="available-content">
               <h3>Profile Management</h3>
               <p>Update your profile information, skills, and preferences.</p>
-              <a href="{{ url_for('profile_redirect') }}" class="action-btn">
+              <a href="{{ url_for('profile.profile_redirect') }}" class="action-btn">
                 <i class="fas fa-edit"></i>
                 Edit Profile
               </a>
@@ -323,7 +323,7 @@
           </div>
           {% if not verification_request %}
           <div class="cta-action">
-            <a href="{{ url_for('verification_request') }}" class="cta-btn">
+            <a href="{{ url_for('dashboard.verification_request') }}" class="cta-btn">
               <i class="fas fa-user-check"></i>
               Request Verification Now
             </a>
@@ -384,7 +384,7 @@
           </div>
         </div>
         <p class="copyright">
-          &copy; 2025 ALGO - Alumni Go. All rights reserved.
+          &copy; 2026 ALGO - Alumni Go. All rights reserved.
         </p>
       </div>
     </footer>

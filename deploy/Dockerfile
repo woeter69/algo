@@ -44,18 +44,14 @@ COPY --from=go-builder /app/websocket-server ./app/src/
 RUN chmod +x ./app/src/websocket-server
 
 # Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY deploy/nginx.conf /etc/nginx/nginx.conf
 
 # Create supervisor configuration
 RUN mkdir -p /var/log/supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Expose port (Render will map this to 443/80)
 EXPOSE 10000
 
 # Start all services with supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
-# Run this file with docker to make your own DockerImage 
-
-# Run docker build -t websocket-server app/

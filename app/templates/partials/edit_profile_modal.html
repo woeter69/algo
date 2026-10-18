@@ -124,8 +124,7 @@
                 type="text"
                 id="universityName"
                 name="universityName"
-                value="Harvard University"
-                required
+                value="{{ education_data[1] if education_data and education_data[1] else (user_data[7] if user_data[7] else '') }}"
               />
             </div>
             <div class="form-group">
@@ -134,9 +133,9 @@
                 type="number"
                 id="graduationYear"
                 name="graduationYear"
-                value="2023"
+                value="{{ user_data[6] if user_data[6] else (education_data[4] if education_data and education_data[4] else '') }}"
                 min="1950"
-                max="2030"
+                max="2035"
               />
             </div>
             <div class="form-group">
@@ -145,7 +144,7 @@
                 type="text"
                 id="degree"
                 name="degree"
-                value="Bachelor of Science"
+                value="{{ education_data[0] if education_data and education_data[0] else '' }}"
                 placeholder="e.g., Bachelor of Science"
               />
             </div>
@@ -155,7 +154,7 @@
                 type="text"
                 id="major"
                 name="major"
-                value="Computer Science"
+                value="{{ education_data[3] if education_data and education_data[3] else (user_data[8] if user_data[8] else '') }}"
                 placeholder="e.g., Computer Science"
               />
             </div>
@@ -167,8 +166,9 @@
                 name="gpa"
                 step="0.01"
                 min="0"
-                max="4"
-                placeholder="3.85"
+                max="10"
+                value="{{ education_data[5] if education_data and education_data[5] else '' }}"
+                placeholder="e.g., 3.85 or 9.2"
               />
             </div>
           </div>
@@ -180,9 +180,7 @@
               name="interests"
               rows="3"
               placeholder="Technology, AI, Web Development, etc."
-            >
-Technology, Artificial Intelligence, Web Development, Machine Learning, Entrepreneurship</textarea
-            >
+            >{{ user_interests|join(', ') if user_interests else '' }}</textarea>
           </div>
         </div>
 
@@ -197,7 +195,7 @@ Technology, Artificial Intelligence, Web Development, Machine Learning, Entrepre
                   type="url"
                   id="linkedIn"
                   name="linkedIn"
-                  value="https://linkedin.com/in/johndoe"
+                  value="{{ user_social_links.linkedin if user_social_links and user_social_links.linkedin else '' }}"
                   placeholder="https://linkedin.com/in/username"
                 />
               </div>
@@ -207,17 +205,17 @@ Technology, Artificial Intelligence, Web Development, Machine Learning, Entrepre
                   type="url"
                   id="github"
                   name="github"
-                  value="https://github.com/johndoe"
+                  value="{{ user_social_links.github if user_social_links and user_social_links.github else '' }}"
                   placeholder="https://github.com/username"
                 />
               </div>
               <div class="form-group">
-                <label for="twitter">Twitter</label>
+                <label for="twitter">Twitter / X</label>
                 <input
                   type="text"
                   id="twitter"
                   name="twitter"
-                  value="@johndoe"
+                  value="{{ user_social_links.twitter if user_social_links and user_social_links.twitter else '' }}"
                   placeholder="@username"
                 />
               </div>
@@ -227,7 +225,7 @@ Technology, Artificial Intelligence, Web Development, Machine Learning, Entrepre
                   type="url"
                   id="website"
                   name="website"
-                  value="https://johndoe.dev"
+                  value="{{ user_social_links.website if user_social_links and user_social_links.website else '' }}"
                   placeholder="https://yourwebsite.com"
                 />
               </div>

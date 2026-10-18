@@ -139,8 +139,20 @@ class GoWebSocketClient {
       case "new_message":
         this.emit("new_message", data);
         break;
+      case "new_chat_message":
+        this.emit("new_chat_message", data);
+        break;
+      case "typing_start":
+        this.emit("typing_start", data);
+        break;
+      case "typing_stop":
+        this.emit("typing_stop", data);
+        break;
       case "user_typing":
         this.emit("user_typing", data);
+        break;
+      case "messages_history":
+        this.emit("messages_history", data);
         break;
       case "user_joined":
         this.emit("user_joined", data);
@@ -195,30 +207,66 @@ class GoWebSocketClient {
     return this.send("leave_channel", { channel_id: channelId });
   }
 
-  // Send a chat message
-  sendMessage(content: string, channelId: string, messageId = null) {
-    return this.send("send_message", {
-      channel_id: channelId,
+  // Send direct chat message
+  sendDirectMessage(content: string, receiverId: string | number, extraData: any = null) {
+    const rid = typeof receiverId === "number" ? receiverId : parseInt(String(receiverId), 10);
+    const extra = typeof extraData === "object" && extraData !== null ? extraData : { message_id: extraData };
+    return this.send("send_message", Object.assign({
+      receiver_id: rid,
       content: content,
-      message_id: messageId,
       created_at: new Date().toISOString(),
       message_type: "text",
-    });
+    }, extra));
   }
 
-  // Send typing start
-  startTyping(channelId) {
+  // Send channel message
+  sendChannelMessage(content: string, channelId: string | number, extraData: any = null) {
+    const cid = typeof channelId === "number" ? channelId : parseInt(String(channelId), 10);
+    const extra = typeof extraData === "object" && extraData !== null ? extraData : { message_id: extraData };
+    return this.send("send_channel_message", Object.assign({
+      channel_id: cid,
+      content: content,
+      created_at: new Date().toISOString(),
+      message_type: "text",
+    }, extra));
+  }
+
+  // Send a chat message (detects whether target is channel or direct user)
+  sendMessage(content: string, targetId: string | number, extraData: any = null) {
+    if (this.currentChannelId && String(this.currentChannelId) === String(targetId)) {
+      return this.sendChannelMessage(content, targetId, extraData);
+    }
+    return this.sendDirectMessage(content, targetId, extraData);
+  }
+
+  // Send typing start for channels
+  startTyping(channelId: string | number) {
     return this.send("user_typing", {
       channel_id: channelId,
       data: { typing: true },
     });
   }
 
-  // Send typing stop
-  stopTyping(channelId) {
+  // Send typing stop for channels
+  stopTyping(channelId: string | number) {
     return this.send("user_typing", {
       channel_id: channelId,
       data: { typing: false },
+    });
+  }
+
+  // Send direct chat typing
+  startDirectTyping(receiverId: string | number) {
+    const rid = typeof receiverId === "number" ? receiverId : parseInt(String(receiverId), 10);
+    return this.send("typing_start", {
+      receiver_id: rid,
+    });
+  }
+
+  stopDirectTyping(receiverId: string | number) {
+    const rid = typeof receiverId === "number" ? receiverId : parseInt(String(receiverId), 10);
+    return this.send("typing_stop", {
+      receiver_id: rid,
     });
   }
 

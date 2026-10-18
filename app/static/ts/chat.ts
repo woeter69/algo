@@ -473,10 +473,32 @@ if ((window as any).chatInitialized) {
       return wrapper;
     }
 
-    function loadOnlineStatus(): void {
-      // Implementation for loading online status
-      console.log("Loading online status...");
+    async function loadOnlineStatus(): Promise<void> {
+      try {
+        const res = await fetch("/api/online_status");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.online_users && Array.isArray(data.online_users)) {
+            const userStatusIndicator = document.getElementById("userStatusIndicator");
+            const userStatusText = document.getElementById("userStatusText");
+            const isOtherOnline = otherUserId ? data.online_users.includes(Number(otherUserId)) : false;
+            if (userStatusIndicator && userStatusText) {
+              if (isOtherOnline) {
+                userStatusIndicator.className = "status-indicator online";
+                userStatusText.textContent = "Online";
+              } else {
+                userStatusIndicator.className = "status-indicator offline";
+                userStatusText.textContent = "Offline";
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load online status:", e);
+      }
     }
+    loadOnlineStatus();
+    setInterval(loadOnlineStatus, 30000);
 
     // Emoji data and functions
 
@@ -680,15 +702,23 @@ if ((window as any).chatInitialized) {
           console.log("File uploaded successfully:", result);
 
           // Send file message via socket
-          socket.emit("send_message", {
-            sender_id: currentUserId!,
-            receiver_id: otherUserId,
-            message: `📎 ${file.name}`,
+          const fileMsg = `📎 ${file.name} - ${result.file_url}`;
+          socket.sendDirectMessage(fileMsg, otherUserId!, {
             file_url: result.file_url,
             file_type: file.type,
             file_name: file.name,
             message_type: "file",
           });
+
+          // Optimistically show attachment
+          const attachmentHtml = file.type.startsWith("image/")
+            ? `<div class="attachment-preview"><img src="${result.file_url}" alt="${file.name}" style="max-width:240px; border-radius:8px; display:block; margin-bottom:4px;" /><span style="font-size:12px;opacity:0.8;">📎 ${file.name}</span></div>`
+            : `<div class="attachment-preview"><a href="${result.file_url}" target="_blank" style="text-decoration:underline;">📎 ${file.name}</a></div>`;
+          const messageElement = createMessageElement(attachmentHtml, true);
+          if (messagesArea) {
+            messagesArea.appendChild(messageElement);
+            scrollToBottom(messagesArea);
+          }
 
           showNotification("File uploaded successfully!", "success");
         } else {
@@ -1004,6 +1034,74 @@ if ((window as any).chatInitialized) {
         );
       }
     };
+
+    // New Message Modal Functionality
+    const usersList = document.getElementById("usersList") as HTMLElement | null;
+
+    async function searchAndRenderUsers(query = ""): Promise<void> {
+      if (!usersList) return;
+      usersList.innerHTML = '<div style="text-align:center; padding:1.5rem; color:#6b7280;">Searching users...</div>';
+      try {
+        const res = await fetch(`/api/search_users?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.success && data.users && data.users.length > 0) {
+          usersList.innerHTML = "";
+          data.users.forEach((u: any) => {
+            const userItem = document.createElement("div");
+            userItem.className = "user-item";
+            userItem.dataset.userId = String(u.user_id);
+            userItem.innerHTML = `
+              <div class="user-avatar">
+                <img src="${u.pfp_path || '/static/images/default_pfp.png'}" alt="${u.name}" onerror="this.src='/static/images/default_pfp.png'" />
+              </div>
+              <div class="user-info">
+                <h4>${u.name}</h4>
+                <p>${u.headline || u.role}</p>
+              </div>
+              <button class="message-user-btn" type="button">Message</button>
+            `;
+            userItem.querySelector(".message-user-btn")?.addEventListener("click", () => {
+              window.location.href = `/chat/${u.username}`;
+            });
+            userItem.addEventListener("click", (e) => {
+              if ((e.target as HTMLElement).tagName !== "BUTTON") {
+                window.location.href = `/chat/${u.username}`;
+              }
+            });
+            usersList.appendChild(userItem);
+          });
+        } else {
+          usersList.innerHTML = '<div style="text-align:center; padding:2rem; color:#6b7280;">No users found. Try another search.</div>';
+        }
+      } catch (err) {
+        console.error("Failed to search users:", err);
+        usersList.innerHTML = '<div style="text-align:center; padding:1.5rem; color:#ef4444;">Failed to load users.</div>';
+      }
+    }
+
+    if (newMessageBtn && newMessageModal) {
+      newMessageBtn.addEventListener("click", () => {
+        newMessageModal.style.display = "flex";
+        searchAndRenderUsers("");
+      });
+    }
+
+    if (closeNewMessageModal && newMessageModal) {
+      closeNewMessageModal.addEventListener("click", () => {
+        newMessageModal.style.display = "none";
+      });
+    }
+
+    if (userSearchInput) {
+      let searchTimeout: NodeJS.Timeout | null = null;
+      userSearchInput.addEventListener("input", (e) => {
+        if (searchTimeout) clearTimeout(searchTimeout);
+        const q = (e.target as HTMLInputElement).value.trim();
+        searchTimeout = setTimeout(() => {
+          searchAndRenderUsers(q);
+        }, 300);
+      });
+    }
 
     // Initialize everything
     console.log("✅ Chat TypeScript initialization complete");

@@ -1,5 +1,5 @@
 // Create Community TypeScript - Community Creation Management
-// Following TypeScript-first approach for the SIH project
+// Following TypeScript-first approach for the AlumniGo project
 
 // Prevent multiple initializations
 if ((window as any).createCommunityInitialized) {

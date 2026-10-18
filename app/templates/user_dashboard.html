@@ -59,11 +59,11 @@
               id="dropdownarrow"
             ></i>
             <div class="user-dropdown" id="userdropdown">
-              <div class="dropdown-item">
+              <div class="dropdown-item" onclick="window.location.href = '/profile'">
                 <i class="fas fa-user"></i>
                 <span>view profile</span>
               </div>
-              <div class="dropdown-item">
+              <div class="dropdown-item" onclick="window.location.href = '/profile'">
                 <i class="fas fa-edit"></i>
                 <span>edit profile</span>
               </div>
@@ -76,16 +76,12 @@
               </div>
               <div
                 class="dropdown-item"
-                onclick="window.location.href = '/forgot-password'"
+                onclick="window.location.href = '/settings'"
               >
                 <i class="fas fa-key"></i>
                 <span>change password</span>
               </div>
-              <div class="dropdown-item">
-                <i class="fas fa-bell"></i>
-                <span>notifications</span>
-              </div>
-              <div class="dropdown-item" id="logoutBtn">
+              <div class="dropdown-item" id="logoutBtn" onclick="window.location.href = '/logout'">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>logout</span>
               </div>
@@ -121,31 +117,31 @@
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-users"></i>
+                <i class="fas fa-graduation-cap"></i>
               </div>
-              <div class="stat-number">1,247</div>
-              <div class="stat-label">Total Alumni</div>
+              <div class="stat-number">{{ stats.total_alumni if stats else 0 }}</div>
+              <div class="stat-label">Verified Alumni</div>
             </div>
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-briefcase"></i>
+                <i class="fas fa-user-friends"></i>
               </div>
-              <div class="stat-number">89</div>
-              <div class="stat-label">Job Opportunities</div>
+              <div class="stat-number">{{ stats.total_connections if stats else 0 }}</div>
+              <div class="stat-label">Connections</div>
             </div>
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-calendar"></i>
+                <i class="fas fa-hashtag"></i>
               </div>
-              <div class="stat-number">23</div>
-              <div class="stat-label">Upcoming Events</div>
+              <div class="stat-number">{{ stats.total_channels if stats else 0 }}</div>
+              <div class="stat-label">Active Channels</div>
             </div>
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-comments"></i>
+                <i class="fas fa-user-clock"></i>
               </div>
-              <div class="stat-number">156</div>
-              <div class="stat-label">Active Conversations</div>
+              <div class="stat-number">{{ stats.pending_requests if stats else 0 }}</div>
+              <div class="stat-label">Pending Requests</div>
             </div>
           </div>
         </div>
@@ -165,33 +161,33 @@
               </div>
               <h3>Find Alumni</h3>
               <p>Search and connect with alumni from your field or location</p>
-              <a href="#" class="btn" data-section="browse">Browse Alumni</a>
+              <a href="{{ url_for('connections.connect') }}" class="btn">Browse Alumni</a>
             </div>
             <div class="action-card">
               <div class="action-icon">
-                <i class="fas fa-briefcase"></i>
+                <i class="fas fa-user-plus"></i>
               </div>
-              <h3>Job Board</h3>
+              <h3>Requests</h3>
               <p>
-                Discover career opportunities posted by alumni and companies
+                Review incoming connection requests and grow your professional circle
               </p>
-              <a href="#" class="btn" data-section="jobs">View Jobs</a>
-            </div>
-            <div class="action-card">
-              <div class="action-icon">
-                <i class="fas fa-calendar-alt"></i>
-              </div>
-              <h3>Events</h3>
-              <p>Join networking events, workshops, and alumni meetups</p>
-              <a href="#" class="btn" data-section="events">View Events</a>
+              <a href="{{ url_for('connections.requests_page') }}" class="btn">View Requests</a>
             </div>
             <div class="action-card">
               <div class="action-icon">
                 <i class="fas fa-comments"></i>
               </div>
-              <h3>Messages</h3>
+              <h3>Channels</h3>
+              <p>Join live campus discussions, tech talk, and career channels</p>
+              <a href="{{ url_for('communities.channels') }}" class="btn">Join Channels</a>
+            </div>
+            <div class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-paper-plane"></i>
+              </div>
+              <h3>Direct Chat</h3>
               <p>
-                Start conversations with fellow alumni and build your network
+                Start instant 1-on-1 conversations with fellow students and alumni
               </p>
               <a href="{{ url_for('chat.chat_list') }}" class="btn">Open Chat</a>
             </div>
@@ -207,48 +203,33 @@
             <p>Stay updated with the latest from your network</p>
           </div>
           <div class="activity-list">
-            <div class="activity-item">
-              <div class="activity-icon">
-                <i class="fas fa-user-plus"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">
-                  New connection request from Sarah Johnson
+            {% if recent_requests %}
+              {% for req in recent_requests %}
+              <div class="activity-item">
+                <div class="activity-icon">
+                  <i class="fas fa-user-plus"></i>
                 </div>
-                <div class="activity-time">2 hours ago</div>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon">
-                <i class="fas fa-briefcase"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">
-                  New job posting in Software Engineering
+                <div class="activity-content">
+                  <div class="activity-title">
+                    New connection request from <strong>@{{ req.username }}</strong> ({{ req.role.title() }})
+                  </div>
+                  <div class="activity-time">
+                    <a href="{{ url_for('connections.requests_page') }}" style="color: var(--primary); font-size: 0.8rem;">Review request &rarr;</a>
+                  </div>
                 </div>
-                <div class="activity-time">4 hours ago</div>
               </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon">
-                <i class="fas fa-calendar"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">
-                  Tech Talk: AI in Healthcare - Tomorrow at 6 PM
+              {% endfor %}
+            {% else %}
+              <div class="activity-item">
+                <div class="activity-icon">
+                  <i class="fas fa-check-circle" style="color: #10b981;"></i>
                 </div>
-                <div class="activity-time">1 day ago</div>
+                <div class="activity-content">
+                  <div class="activity-title">You are all caught up!</div>
+                  <div class="activity-time">Explore alumni or join active channels to expand your network.</div>
+                </div>
               </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon">
-                <i class="fas fa-comments"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">New message from Michael Chen</div>
-                <div class="activity-time">2 days ago</div>
-              </div>
-            </div>
+            {% endif %}
           </div>
         </div>
       </section>
@@ -315,10 +296,10 @@
             <h3>Quick Links</h3>
             <ul>
               <li><a href="{{ url_for('core.home') }}">Home</a></li>
-              <li><a href="#" data-section="browse">Browse Alumni</a></li>
-              <li><a href="#" data-section="jobs">Job Board</a></li>
-              <li><a href="#" data-section="events">Events</a></li>
-              <li><a href="{{ url_for('core.about') }}">About Us</a></li>
+              <li><a href="{{ url_for('connections.connect') }}">Browse Alumni</a></li>
+              <li><a href="{{ url_for('communities.channels') }}">Channels</a></li>
+              <li><a href="{{ url_for('chat.chat_list') }}">Chat</a></li>
+              <li><a href="{{ url_for('core.contact') }}">Contact Us</a></li>
             </ul>
           </div>
           <div class="footer-links">
@@ -341,7 +322,7 @@
           </div>
         </div>
         <p class="copyright">
-          &copy; 2025 ALGO - Alumni Go. All rights reserved.
+          &copy; 2026 ALGO - Alumni Go. All rights reserved.
         </p>
       </div>
     </footer>

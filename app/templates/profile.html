@@ -443,10 +443,10 @@
           <div class="footer-links">
             <h3>Quick Links</h3>
             <ul>
-              <li><a href="#" data-section="home">Home</a></li>
-              <li><a href="#" data-section="browse">Browse Alumni</a></li>
-              <li><a href="#" data-section="jobs">Job Board</a></li>
-              <li><a href="#" data-section="events">Events</a></li>
+              <li><a href="{{ url_for('core.home') }}">Home</a></li>
+              <li><a href="{{ url_for('connections.connect') }}">Browse Alumni</a></li>
+              <li><a href="{{ url_for('communities.channels') }}">Channels</a></li>
+              <li><a href="{{ url_for('chat.chat_list') }}">Chat</a></li>
             </ul>
           </div>
           <div class="footer-links">
@@ -462,14 +462,14 @@
             <h3>Support</h3>
             <ul>
               <li><a href="#">Help Center</a></li>
-              <li><a href="#" data-section="contact">Contact Us</a></li>
+              <li><a href="{{ url_for('core.contact') }}">Contact Us</a></li>
               <li><a href="#">Privacy Policy</a></li>
               <li><a href="#">Terms of Service</a></li>
             </ul>
           </div>
         </div>
         <p class="copyright">
-          &copy; 2025 ALGO - Alumni Go. All rights reserved.
+          &copy; 2026 ALGO - Alumni Go. All rights reserved.
         </p>
       </div>
     </footer>

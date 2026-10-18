@@ -1,5 +1,5 @@
 // Requests TypeScript - Connection Requests Management
-// Following TypeScript-first approach for the SIH project
+// Following TypeScript-first approach for the AlumniGo project
 
 interface ConnectionRequest {
   connection_id: number;

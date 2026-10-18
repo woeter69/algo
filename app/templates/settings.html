@@ -301,14 +301,82 @@
               </div>
               {% endif %}
             </div>
+
+            <form class="settings-form" id="privacyForm" style="margin-top: 2rem;">
+              <div class="form-group">
+                <label>Profile Visibility</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" name="profileVisibility" value="public" {% if user_data.profile_visibility == 'public' %}checked{% endif %} />
+                    <span class="radio-custom"></span>
+                    <div class="radio-content">
+                      <strong>Public</strong>
+                      <small>Visible to all registered students and alumni</small>
+                    </div>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="profileVisibility" value="connections" {% if user_data.profile_visibility == 'connections' %}checked{% endif %} />
+                    <span class="radio-custom"></span>
+                    <div class="radio-content">
+                      <strong>Connections Only</strong>
+                      <small>Only visible to your confirmed connections</small>
+                    </div>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="profileVisibility" value="private" {% if user_data.profile_visibility == 'private' %}checked{% endif %} />
+                    <span class="radio-custom"></span>
+                    <div class="radio-content">
+                      <strong>Private</strong>
+                      <small>Hidden from public directory searches</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                  Save Privacy
+                </button>
+              </div>
+            </form>
           </section>
 
-          <!-- Preferences -->
+          <!-- Notifications & Preferences -->
           <section id="notifications" class="settings-section">
             <div class="section-header">
-              <h3>Preferences</h3>
-              <p>Customize your ALGO experience</p>
+              <h3>Notifications & Preferences</h3>
+              <p>Customize your ALGO notifications and experience</p>
             </div>
+
+            <form class="settings-form" id="notificationsForm" style="margin-bottom: 2rem;">
+              <div class="notification-category">
+                <div class="toggle-group">
+                  <label class="toggle-option">
+                    <input type="checkbox" name="email_notifications" id="emailNotifications" {% if user_data.email_notifications %}checked{% endif %} />
+                    <span class="toggle-slider"></span>
+                    <div class="toggle-content">
+                      <strong>Email Notifications</strong>
+                      <small>Receive email alerts for new connection requests and community messages</small>
+                    </div>
+                  </label>
+
+                  <label class="toggle-option">
+                    <input type="checkbox" name="job_alerts" id="jobAlerts" {% if user_data.job_alerts %}checked{% endif %} />
+                    <span class="toggle-slider"></span>
+                    <div class="toggle-content">
+                      <strong>Job Alerts</strong>
+                      <small>Get notified about career opportunities and mentorship openings</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                  Save Notifications
+                </button>
+              </div>
+            </form>
 
             <form class="settings-form" id="preferencesForm">
               <div class="form-group">

@@ -133,57 +133,40 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // Get form data
+      // Send form data to backend
       const formData = new FormData(profileForm);
-      const data = {
-        firstName: formData.get("firstName"),
-        lastName: formData.get("lastName"),
-        username: formData.get("username"),
-        email: formData.get("email"),
-        phone: formData.get("phone"),
-        currentCity: formData.get("currentCity"),
-        universityName: formData.get("universityName"),
-        graduationYear: formData.get("graduationYear"),
-        degree: formData.get("degree"),
-        major: formData.get("major"),
-        gpa: formData.get("gpa"),
-        bio: formData.get("bio"),
-        interests: formData.get("interests"),
-        skills: formData.get("skills"),
-        linkedIn: formData.get("linkedIn"),
-        github: formData.get("github"),
-        twitter: formData.get("twitter"),
-        website: formData.get("website"),
-        emailNotifications: formData.get("emailNotifications") === "on",
-        profileVisibility: formData.get("profileVisibility") === "on",
-        jobAlerts: formData.get("jobAlerts") === "on",
-      };
-
-      // Handle password change if provided
-      const currentPassword = formData.get("currentPassword");
-      const newPassword = formData.get("newPassword");
-      const confirmPassword = formData.get("confirmPassword");
-
-      if (currentPassword || newPassword || confirmPassword) {
-        if (
-          !validatePasswordChange(currentPassword, newPassword, confirmPassword)
-        ) {
-          return;
-        }
-        data.passwordChange = {
-          currentPassword,
-          newPassword,
-        };
+      const saveBtn = profileForm.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
       }
 
-      // Update display elements
-      updateProfileDisplay(data);
-
-      // Close modal
-      closeModal();
-
-      // Show success message
-      showNotification("Profile updated successfully!", "success");
+      fetch("/api/profile/update", {
+        method: "POST",
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.success) {
+            showNotification(result.message || "Profile updated successfully!", "success");
+            closeModal();
+            setTimeout(() => {
+              window.location.reload();
+            }, 700);
+          } else {
+            showNotification(result.error || "Failed to update profile", "error");
+          }
+        })
+        .catch((err) => {
+          console.error("Profile update error:", err);
+          showNotification("An error occurred while updating profile", "error");
+        })
+        .finally(() => {
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+          }
+        });
     });
   }
 

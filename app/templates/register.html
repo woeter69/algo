@@ -22,23 +22,20 @@
     <header>
       <div class="container">
         <nav>
-          <a href="#" class="logo" id="home-link">algo</a>
+          <a href="{{ url_for('core.home') }}" class="logo" id="home-link">algo</a>
           <ul class="nav-links">
             <li>
-              <a href="{{ url_for('core.home')}}" class="active" data-section="home"
-                >Home</a
-              >
+              <a href="{{ url_for('core.home')}}">Home</a>
             </li>
-            <li><a href="#" data-section="browse">Browse Alumni</a></li>
-            <li><a href="#" data-section="jobs">Job Board</a></li>
-            <li><a href="#" data-section="events">Events</a></li>
+            <li><a href="{{ url_for('connections.connect') }}">Browse Alumni</a></li>
+            <li><a href="{{ url_for('communities.channels') }}">Channels</a></li>
             <li>
-              <a href="{{ url_for('core.contact') }}" class="active">Contact Us</a>
+              <a href="{{ url_for('core.contact') }}">Contact Us</a>
             </li>
             <li><a href="{{ url_for('core.about') }}">About Us</a></li>
             <li><a href="{{ url_for('auth.login') }}">Login</a></li>
             <li>
-              <a href="{{ url_for('auth.register') }}" class="nav-signup">Sign Up</a>
+              <a href="{{ url_for('auth.register') }}" class="nav-signup active">Sign Up</a>
             </li>
           </ul>
           <div class="hamburger">
@@ -161,9 +158,9 @@
             <h3>Quick Links</h3>
             <ul>
               <li><a href="{{ url_for('core.home') }}">Home</a></li>
-              <li><a href="#" data-section="browse">Browse Alumni</a></li>
-              <li><a href="#" data-section="jobs">Job Board</a></li>
-              <li><a href="#" data-section="events">Events</a></li>
+              <li><a href="{{ url_for('connections.connect') }}">Browse Alumni</a></li>
+              <li><a href="{{ url_for('communities.channels') }}">Channels</a></li>
+              <li><a href="{{ url_for('core.contact') }}">Contact Us</a></li>
             </ul>
           </div>
           <div class="footer-links">
@@ -186,7 +183,7 @@
           </div>
         </div>
         <p class="copyright">
-          &copy; 2025 ALGO - Alumni Go. All rights reserved.
+          &copy; 2026 ALGO - Alumni Go. All rights reserved.
         </p>
       </div>
     </footer>

@@ -26,21 +26,30 @@
           <a href="#" class="logo" id="home-link">algo</a>
           <ul class="nav-links">
             <li>
-              <a href="{{ url_for('core.home')}}" class="active" data-section="home"
-                >Home</a
-              >
+              <a href="{{ url_for('core.home')}}">Home</a>
             </li>
-            <li><a href="#" data-section="browse">Browse Alumni</a></li>
-            <li><a href="#" data-section="jobs">Job Board</a></li>
-            <li><a href="#" data-section="events">Events</a></li>
+            <li><a href="{{ url_for('connections.connect') }}">Browse Alumni</a></li>
             <li>
-              <a href="{{ url_for('core.contact') }}" class="active">Contact Us</a>
+              <a href="{{ url_for('core.contact') }}">Contact Us</a>
             </li>
             <li><a href="{{ url_for('core.about') }}">About Us</a></li>
+            {% if session.get('user_id') %}
+            <li>
+              <span style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.2); padding: 0.4rem 0.8rem; border-radius: 20px; color: white; font-weight: 600; font-size: 0.85rem;">
+                <i class="fas fa-user-shield"></i> {{ username }} (Admin)
+              </span>
+            </li>
+            <li>
+              <a href="{{ url_for('auth.logout') }}" style="color: #fca5a5; font-weight: 600;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </li>
+            {% else %}
             <li><a href="{{ url_for('auth.login') }}">Login</a></li>
             <li>
               <a href="{{ url_for('auth.register') }}" class="nav-signup">Sign Up</a>
             </li>
+            {% endif %}
           </ul>
           <div class="hamburger">
             <div class="line1"></div>
@@ -54,13 +63,26 @@
     <!-- ADMIN DASHBOARD -->
     <section class="admin-section">
       <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages" style="margin-bottom: 1.5rem;">
+              {% for category, message in messages %}
+                <div class="flash-alert flash-{{ category }}" style="padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.75rem; font-weight: 500; {% if category == 'success' %}background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;{% elif category == 'error' %}background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;{% else %}background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe;{% endif %}">
+                  <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
         <div class="admin-header">
           <div class="admin-welcome">
             <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
             <p>Manage verification requests and college administration</p>
           </div>
           <div class="admin-actions">
-            <a href="{{ url_for('create_community') }}" class="btn btn-primary">
+            <a href="{{ url_for('communities.create_community') }}" class="btn btn-primary">
               <i class="fas fa-plus"></i>
               Create Community
             </a>
@@ -82,6 +104,15 @@
               <div class="stat-info">
                 <h3>{{ total_verified }}</h3>
                 <p>Verified Users</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-envelope-open-text"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="pending-inquiries-count">{{ pending_inquiries_count }}</h3>
+                <p>Pending Inquiries</p>
               </div>
             </div>
           </div>
@@ -190,6 +221,82 @@
           </div>
           {% endif %}
         </div>
+
+        <!-- CONTACT US INQUIRIES -->
+        <div class="admin-content" style="margin-top: 2rem;">
+          <div class="section-header">
+            <h2>
+              <i class="fas fa-envelope"></i> Contact Us Inquiries
+            </h2>
+            <div class="section-actions">
+              <span class="role-badge" style="background: #e0e7ff; color: #4338ca; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600;">
+                {{ pending_inquiries_count }} Pending
+              </span>
+            </div>
+          </div>
+
+          <div class="requests-grid" id="inquiries-grid">
+            {% if contact_inquiries %}
+            {% for inquiry in contact_inquiries %}
+            <div class="request-card" style="border-left: 4px solid {% if inquiry.status == 'resolved' %}#10b981{% else %}#f59e0b{% endif %};">
+              <div class="request-header">
+                <div class="user-info">
+                  <div class="user-avatar" style="background: {% if inquiry.status == 'resolved' %}#10b981{% else %}#f59e0b{% endif %};">
+                    <i class="fas {% if inquiry.status == 'resolved' %}fa-check-circle{% else %}fa-envelope{% endif %}"></i>
+                  </div>
+                  <div class="user-details">
+                    <h3>{{ inquiry.full_name }}</h3>
+                    <p class="user-email"><i class="fas fa-envelope"></i> {{ inquiry.email }}{% if inquiry.phone %} &bull; <i class="fas fa-phone"></i> {{ inquiry.phone }}{% endif %}</p>
+                    <span class="role-badge" style="background: {% if inquiry.status == 'resolved' %}#d1fae5; color: #065f46{% else %}#fef3c7; color: #92400e{% endif %}; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                      {{ inquiry.status|upper }}
+                    </span>
+                  </div>
+                </div>
+                <div class="request-date">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span>{{ inquiry.submitted_at.strftime('%b %d, %Y %H:%M') if inquiry.submitted_at else 'Recent' }}</span>
+                </div>
+              </div>
+              <div class="request-details">
+                <div class="detail-item">
+                  <strong>Subject:</strong> {{ inquiry.subject }}
+                </div>
+                <div class="detail-item" style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; margin-top: 0.5rem; white-space: pre-wrap;">
+                  <strong>Message:</strong><br />{{ inquiry.message }}
+                </div>
+                {% if inquiry.status == 'resolved' %}
+                <div class="detail-item" style="margin-top: 0.75rem; color: #065f46; font-size: 0.9rem;">
+                  <i class="fas fa-check-circle"></i> <strong>Resolved</strong> by {{ inquiry.resolver_username or 'Admin' }} on {{ inquiry.resolved_at.strftime('%b %d, %Y %H:%M') if inquiry.resolved_at else '' }}
+                  {% if inquiry.resolution_notes %}
+                  <p style="margin-top: 0.25rem; font-style: italic; color: #374151;">Note: {{ inquiry.resolution_notes }}</p>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+
+              {% if inquiry.status != 'resolved' %}
+              <form action="{{ url_for('dashboard.resolve_contact_query', query_id=inquiry.id) }}" method="POST" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                  <input type="text" name="resolution_notes" placeholder="Optional resolution notes..." style="flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem;" />
+                  <button type="submit" class="btn-approve" style="flex: 0 0 auto; padding: 0.5rem 1.25rem; font-size: 0.9rem;">
+                    <i class="fas fa-paper-plane"></i> Resolve & Email User
+                  </button>
+                </div>
+              </form>
+              {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="fas fa-inbox"></i>
+              </div>
+              <h3>No inquiries yet!</h3>
+              <p>Contact messages submitted by visitors will appear here.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </section>
 
@@ -248,7 +355,7 @@
           </div>
         </div>
         <p class="copyright">
-          &copy; 2025 ALGO - Alumni Go. All rights reserved.
+          &copy; 2026 ALGO - Alumni Go. All rights reserved.
         </p>
       </div>
     </footer>

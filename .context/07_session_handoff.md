@@ -1,0 +1,57 @@
+# Active Session Handoff
+
+# Active Session Snapshot
+- **Timestamp / Session Index**: 2026-09-30T14:50:00Z
+- **Tasks Completed Across Epics 13-19**:
+  - **Epic 13 (DM Engine & Real-Time Chat)**:
+    - Upgraded `app/static/ts/go-websocket-client.ts` with direct chat message routing (`sendDirectMessage`, `sendChannelMessage`, direct typing indicators).
+    - Implemented `/api/online_status`, `/api/search_users`, and chat attachments in `app/src/algo/blueprints/chat.py`.
+    - Wired "New Message" modal, live search, and optimistic attachment delivery in `app/static/ts/chat.ts`.
+  - **Epic 14 (Channels Architecture & Real-Time Persistence)**:
+    - Rewrote `app/static/ts/channels.ts` with real-time channel message loading (`GET /channels/<id>/messages`), dynamic channel members loading with preview modal, and Go WebSocket broadcasting.
+    - Added fallback query to `community_members` in `get_channel_members` so members list is never stuck on loading.
+    - Added "+ Create Channel" button and modal dialog in `app/templates/channels.html`, posting to `POST /communities/<id>/channels`.
+  - **Epic 15 (Verification Workflow & Limited Dashboard)**:
+    - Fixed broken `url_for('profile_redirect')` and `url_for('verification_request')` in `app/templates/limited_dashboard.html`.
+    - Connected `verification_request.html` to dynamically load colleges from `communities` table.
+    - Implemented verification submission in `dashboard.py`: inserts into `verification_requests` and updates `users.verification_status = 'pending'`.
+    - Updated `admin_dashboard()` to join `verification_requests` and `communities` displaying real student ID, department, grad year, college, and message.
+    - Updated `/api/handle_verification_request` to approve/reject requests, and auto-enrolled approved users into `community_members`.
+    - Added `/logout` route forwarder in `core.py`.
+  - **Epic 16 (User Dashboard Metrics & Dynamic Feed)**:
+    - Replaced hardcoded stats with real DB queries (`total_alumni`, `total_connections`, `total_channels`, `pending_requests`).
+    - Replaced broken `href="#"` buttons with working endpoints (Browse Alumni, Requests, Channels, Open Chat).
+    - Connected user dropdown menu items to `/profile`, `/settings`, and `/logout`.
+    - Rendered dynamic recent activity feed of incoming connection requests.
+  - **Epic 17 (Profile & Experience/Education CRUD)**:
+    - Populated `edit_profile_modal.html` with real user attributes.
+    - Implemented `normalize_degree_type` and added `/api/profile/update`, `/api/profile/experience` (POST & DELETE), and `/api/profile/education` (POST & DELETE) in `profile.py`.
+    - Updated `profile.ts` to submit `#profileForm` via `fetch('/api/profile/update')`.
+    - Added avatar file upload with local disk storage in `app/static/uploads/avatars/`.
+  - **Epic 18 (Community Discovery & Settings Persistence)**:
+    - Implemented `/communities/discover`, `/communities/<id>/join`, and `/communities/<id>/leave` in `channels.py`.
+    - Built "Explore Communities" modal dialog in `channels.html` and connected in `channels.ts`.
+    - Wired Settings page (`settings.py` and `settings.html`) with real DB persistence for `profile_visibility`, `email_notifications`, and `job_alerts`.
+    - Fixed tuple index out of range crash in `/api/export_data` JSON export endpoint.
+  - **Epic 19 (Navigation Link & Footer Audit)**:
+    - Audited and replaced dead `href="#"` navbar and footer links across `register.html`, `thanks.html`, `token_expired.html`, `token_invalid.html`, `verification_request.html`, `user_dashboard.html`, and `profile.html`.
+    - Verified all 16 automated tests pass with 100% success (`pytest tests/`).
+    - Verified frontend asset builds with zero TypeScript or Tailwind compilation errors.
+- **Current System State**: Fully deployed locally and running live.
+  - Web UI: http://localhost:5000
+  - Contact Us: http://localhost:5000/contact
+  - User Dashboard: http://localhost:5000/user_dashboard
+  - Admin Dashboard: http://localhost:5000/admin_dashboard
+  - Channels: http://localhost:5000/channels
+  - Settings: http://localhost:5000/settings
+  - WebSocket Server: ws://localhost:8080/ws
+  - Health Endpoint: http://localhost:8080/health
+  - Database: PostgreSQL on localhost:5432 (database: `alumni_platform`)
+- **Active Blockers / Edge Cases**: None.
+- **Test Accounts**:
+  - Admin: `admin@alumnigo.test` / `admin123`
+  - Student: `student@alumnigo.test` / `student123`
+  - Alumni: `alumni@alumnigo.test` / `alumni123`
+  - **Student**: `student@alumnigo.test` or `teststudent` / password: `student123`
+  - **Alumni**: `alumni@alumnigo.test` or `testalumni` / password: `alumni123`
+  - **Admin**: `admin@alumnigo.test` or `admin` / password: `admin123`
