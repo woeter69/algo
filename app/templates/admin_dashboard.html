@@ -145,7 +145,7 @@
                     />
                     {% else %}
                     <img
-                      src="https://ui-avatars.com/api/?name={{ request.username|replace(' ', '+') }}&background=667eea&color=fff&size=50"
+                      src="{{ generate_default_avatar(request.username) }}"
                       alt="{{ request.username }}"
                     />
                     {% endif %}

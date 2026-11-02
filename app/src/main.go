@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -13,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
 )
@@ -49,7 +52,7 @@ func loadEnv() {
 
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
-			
+
 			// Remove quotes if present
 			value = strings.Trim(value, "\"'")
 
@@ -175,8 +178,10 @@ var upgrader = websocket.Upgrader{
 }
 
 var (
-	db  *sql.DB
-	hub *Hub
+	db     *sql.DB
+	hub    *Hub
+	router *mux.Router
+	store  *sessions.CookieStore
 )
 
 // Helper function for min
@@ -449,31 +454,6 @@ func (h *Hub) removeFromChannel(userID, channelID int) {
 	if typingUsers, exists := h.ChannelTyping[channelID]; exists {
 		delete(typingUsers, userID)
 	}
-}
-
-// Handle typing indicators
-func (h *Hub) handleTyping(message WSMessage) {
-	h.Mutex.Lock()
-	defer h.Mutex.Unlock()
-
-	channelID := getChannelID(message.ChannelID)
-	if h.ChannelTyping[channelID] == nil {
-		h.ChannelTyping[channelID] = make(map[int]bool)
-	}
-
-	// Update typing status
-	if data, ok := message.Data.(map[string]interface{}); ok {
-		if typing, exists := data["typing"].(bool); exists {
-			if typing {
-				h.ChannelTyping[channelID][message.UserID] = true
-			} else {
-				delete(h.ChannelTyping[channelID], message.UserID)
-			}
-		}
-	}
-
-	// Broadcast typing status
-	h.broadcastToChannel(message)
 }
 
 // Handle direct chat messages
@@ -753,7 +733,7 @@ func (c *Client) writePump() {
 func connectDB() *sql.DB {
 	// Get database URL from environment variable (Render sets this automatically)
 	connStr := os.Getenv("DATABASE_URL")
-	
+
 	if connStr == "" {
 		log.Println("⚠️  DATABASE_URL environment variable is empty")
 		return nil
@@ -794,29 +774,6 @@ func connectDB() *sql.DB {
 	return db
 }
 
-// CORS middleware
-func enableCORS(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-}
-
-// Health check endpoint
-func healthCheck(w http.ResponseWriter, r *http.Request) {
-	enableCORS(w, r)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"status":  "healthy",
-		"service": "go-websocket-server",
-		"time":    time.Now().Format(time.RFC3339),
-	})
-}
-
 func main() {
 	loadEnv()
 	log.Println("🚀 Starting Go WebSocket server...")
@@ -855,82 +812,166 @@ func main() {
 		log.Println("⚠️  No database connection (WebSocket will still work)")
 	}
 
+	seedFlag := flag.Bool("seed", false, "Seed the database with initial development data")
+	flag.Parse()
+
+	if *seedFlag {
+		if db == nil {
+			log.Fatal("❌ Cannot seed: database not connected")
+		}
+		if err := SeedDatabase(db); err != nil {
+			log.Fatalf("❌ Seeding failed: %v", err)
+		}
+		log.Println("✅ Database seeded successfully!")
+		return
+	}
+
+	// Initialize Session Store
+	secretKey := os.Getenv("SECRET_KEY")
+	if secretKey == "" {
+		secretKey = "dev-secret-key"
+	}
+	store = sessions.NewCookieStore([]byte(secretKey))
+
+	// Initialize Templates
+	initTemplates()
+
 	// Initialize Hub
 	hub = NewHub(db)
 	go hub.Run()
 
-	// Initialize OAuth handler
-	oauth := NewGoogleOAuth(db)
-	if oauth != nil {
-		oauth.setupOAuthRoutes()
-	}
+	// Initialize Router
+	router = mux.NewRouter()
 
-	// Initialize WebSocket upgrader
-	upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			// Allow all origins in production (you might want to restrict this)
-			return true
-		},
-	}
+	// Static files
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
+
+	// Core routes
+	router.HandleFunc("/", handleHome).Methods("GET")
+	router.HandleFunc("/about", handleAbout).Methods("GET")
+	router.HandleFunc("/contact", handleContact).Methods("GET", "POST")
+	router.HandleFunc("/thanks", handleThanks).Methods("GET", "POST")
+	router.HandleFunc("/recommendations", handleRecommendations).Methods("GET")
+
+	// Auth routes (both /auth/... and root aliases)
+	router.HandleFunc("/auth/register", handleRegister).Methods("GET", "POST")
+	router.HandleFunc("/register", handleRegister).Methods("GET", "POST")
+	router.HandleFunc("/auth/login", handleLogin).Methods("GET", "POST")
+	router.HandleFunc("/login", handleLogin).Methods("GET", "POST")
+	router.HandleFunc("/auth/logout", handleLogout).Methods("GET")
+	router.HandleFunc("/logout", handleLogout).Methods("GET")
+	router.HandleFunc("/check_email", handleCheckEmail).Methods("GET")
+	router.HandleFunc("/verify/{token}", handleVerifyToken).Methods("GET")
+	router.HandleFunc("/confirmation", handleConfirmation).Methods("GET")
+	router.HandleFunc("/forgot_password", handleForgotPassword).Methods("GET", "POST")
+
+	// Dashboard routes
+	router.HandleFunc("/dashboard", handleDashboard).Methods("GET")
+	router.HandleFunc("/user_dashboard", handleDashboard).Methods("GET")
+	router.HandleFunc("/admin_dashboard", handleAdminDashboard).Methods("GET", "POST")
+	router.HandleFunc("/admin/contact/{query_id:[0-9]+}/resolve", handleResolveContact).Methods("POST")
+	router.HandleFunc("/limited_dashboard", handleLimitedDashboard).Methods("GET")
+	router.HandleFunc("/verification_request", handleVerificationRequest).Methods("GET", "POST")
+	router.HandleFunc("/api/handle_verification_request", handleApiVerificationRequest).Methods("POST")
+
+	// Profile routes
+	router.HandleFunc("/profile", handleProfileView).Methods("GET")
+	router.HandleFunc("/profile/{username}", handleProfileView).Methods("GET")
+	router.HandleFunc("/api/profile/update", handleUpdateProfile).Methods("POST")
+	router.HandleFunc("/api/profile/experience", handleAddExperience).Methods("POST")
+	router.HandleFunc("/api/profile/experience/{exp_id:[0-9]+}", handleDeleteExperience).Methods("DELETE")
+	router.HandleFunc("/api/profile/education", handleAddEducation).Methods("POST")
+	router.HandleFunc("/api/profile/education/{detail_id:[0-9]+}", handleDeleteEducation).Methods("DELETE")
+	router.HandleFunc("/complete_profile", handleCompleteProfile).Methods("GET", "POST")
+	router.HandleFunc("/interests", handleInterests).Methods("GET", "POST")
+
+	// Settings routes
+	router.HandleFunc("/settings", handleSettingsView).Methods("GET", "POST")
+	router.HandleFunc("/api/update_account", handleUpdateAccount).Methods("POST")
+	router.HandleFunc("/api/update_privacy", handleUpdatePrivacy).Methods("POST")
+	router.HandleFunc("/api/update_preferences", handleUpdatePreferences).Methods("POST")
+	router.HandleFunc("/api/update_notifications", handleUpdateNotifications).Methods("POST")
+	router.HandleFunc("/api/change_password", handleChangePassword).Methods("POST")
+	router.HandleFunc("/api/update_profile_picture", handleUpdateProfilePicture).Methods("POST")
+	router.HandleFunc("/api/deactivate_account", handleDeactivateAccount).Methods("POST")
+	router.HandleFunc("/api/delete_account", handleDeleteAccount).Methods("POST")
+	router.HandleFunc("/api/logout_all_sessions", handleLogoutAllSessions).Methods("POST")
+	router.HandleFunc("/api/export_data", handleExportData).Methods("GET", "POST")
+
+	// Connections routes
+	router.HandleFunc("/connect", handleConnectView).Methods("GET")
+	router.HandleFunc("/requests", handleRequestsView).Methods("GET")
+	router.HandleFunc("/api/send_connection_request", handleSendConnectionRequest).Methods("POST")
+	router.HandleFunc("/api/respond_connection_request", handleRespondConnectionRequest).Methods("POST")
+	router.HandleFunc("/api/get_connection_requests", handleGetConnectionRequests).Methods("GET")
+	router.HandleFunc("/api/cancel_connection_request", handleCancelConnectionRequest).Methods("POST")
+	router.HandleFunc("/api/alumni/search", handleSearchAlumni).Methods("GET")
+
+	// Communities & Channels routes
+	router.HandleFunc("/channels", handleChannelsView).Methods("GET")
+	router.HandleFunc("/create_community", handleCreateCommunity).Methods("GET", "POST")
+	router.HandleFunc("/communities", handleGetCommunities).Methods("GET")
+	router.HandleFunc("/api/communities", handleGetCommunities).Methods("GET")
+	router.HandleFunc("/communities/discover", handleDiscoverCommunities).Methods("GET")
+	router.HandleFunc("/api/communities/discover", handleDiscoverCommunities).Methods("GET")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/join", handleJoinCommunity).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/leave", handleLeaveCommunity).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/join-request", handleJoinCommunityRequest).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/invitations", handleInviteUserToCommunity).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/members", handleGetCommunityMembers).Methods("GET")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/channels", handleGetChannels).Methods("GET")
+	router.HandleFunc("/api/communities/{community_id:[0-9]+}/channels", handleGetChannels).Methods("GET")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/channels", handleCreateChannel).Methods("POST")
+	router.HandleFunc("/channels/{channel_id:[0-9]+}/messages", handleGetChannelMessages).Methods("GET")
+	router.HandleFunc("/channels/{channel_id:[0-9]+}/messages", handleSendChannelMessageHTTP).Methods("POST")
+	router.HandleFunc("/channels/{channel_id:[0-9]+}/members", handleGetChannelMembers).Methods("GET")
+	router.HandleFunc("/messages/{message_id:[0-9]+}/reactions", handleAddReaction).Methods("POST")
+
+	// Chat routes
+	router.HandleFunc("/chat", handleChatList).Methods("GET")
+	router.HandleFunc("/chat_list", handleChatList).Methods("GET")
+	router.HandleFunc("/chat/{username}", handleChat).Methods("GET")
+	router.HandleFunc("/api/online_status", handleOnlineStatus).Methods("GET")
+	router.HandleFunc("/api/upload_file", handleUploadChatFile).Methods("POST")
+	router.HandleFunc("/api/upload_image", handleUploadChatFile).Methods("POST")
+	router.HandleFunc("/api/search_users", handleSearchUsers).Methods("GET")
+
+	// User handle fallback route (e.g. /johndoe) - placed after specific static routes
+	router.HandleFunc("/{username:[a-zA-Z0-9_.-]+}", handleProfileView).Methods("GET")
+
 
 	// WebSocket endpoint
-	http.HandleFunc("/ws", hub.handleWebSocket)
+	router.HandleFunc("/ws", hub.handleWebSocket)
 
-	// Health check endpoint with CORS
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		// Add CORS headers
+	// Broadcast API
+	router.HandleFunc("/api/broadcast", func(w http.ResponseWriter, r *http.Request) {
+		handleBroadcastAPI(hub, w, r)
+	}).Methods("POST", "OPTIONS")
+
+	// Initialize OAuth handler (it needs the router now)
+	oauth := NewGoogleOAuth(db)
+	if oauth != nil {
+		oauth.setupOAuthRoutes(router)
+	}
+
+	// Health check and Test endpoints
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		log.Println("🏥 Health check requested")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Go WebSocket Server OK"))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "algo-go-backend"})
 	})
 
-	// Simple test endpoint with CORS
-	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		// Add CORS headers
+	router.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		log.Println("🧪 Test endpoint requested")
-		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Go server is running!"))
 	})
 
 	// Server configuration
 	host := "0.0.0.0"
 
-	// Start WebSocket server
-	log.Printf("🚀 WebSocket server starting on port %d", port)
-	log.Printf("🌐 Binding to: %s:%d (all interfaces)", host, port)
-	log.Printf("🌐 WebSocket endpoint: ws://%s:%d/ws", "localhost", port)
-	log.Printf("🌐 WebSocket endpoint: ws://%s:%d/ws", "127.0.0.1", port)
-	log.Printf("🌐 WebSocket endpoint: ws://%s:%d/ws", "192.168.56.131", port)
-	log.Printf("❤️  Health check: http://%s:%d/health", "localhost", port)
-	log.Printf("❤️  Health check: http://%s:%d/health", "127.0.0.1", port)
-	log.Printf("🧪 Test endpoint: http://%s:%d/test", "localhost", port)
-	log.Printf("📡 Broadcast API: http://%s:%d/api/broadcast", "localhost", port)
-
-	// Broadcast API endpoint for Python to trigger WebSocket broadcasts
-	http.HandleFunc("/api/broadcast", func(w http.ResponseWriter, r *http.Request) {
-		handleBroadcastAPI(hub, w, r)
-	})
-
-	// Start the server
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil))
+	// Start server
+	log.Printf("🚀 Server starting on port %d", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), router))
 }
 
 // Handle broadcast API requests from Python

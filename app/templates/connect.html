@@ -40,11 +40,15 @@
             </li>
           </ul>
           <div class="user-profile" id="userprofile">
-            {% set user_full_name = (current_user[1] or '') + ' ' +
-            (current_user[2] or '') if current_user else session.get('username',
-            'User') %} {% set user_pfp = current_user[4] if current_user else
-            session.get('pfp_path', '') %} {% set user_role = current_user[3] if
-            current_user else session.get('role', 'user') %}
+            {% if current_user %}
+              {% set user_full_name = current_user.1 + " " + current_user.2 %}
+              {% set user_pfp = current_user.4 %}
+              {% set user_role = current_user.3 %}
+            {% else %}
+              {% set user_full_name = session.username %}
+              {% set user_pfp = session.pfp_path %}
+              {% set user_role = session.role %}
+            {% endif %}
             <img
               src="{% if user_pfp %}{{ user_pfp }}{% else %}{{ generate_default_avatar(user_full_name) }}{% endif %}"
               alt="profile"
@@ -53,12 +57,10 @@
             />
             <div class="user-info">
               <div class="user-name">
-                {{ user_full_name.strip() if user_full_name.strip() else
-                current_user[0] if current_user else session.get('username',
-                'User') }}
+                {{ user_full_name }}
               </div>
               <div class="user-role">
-                {{ user_role.title() if user_role else 'User' }}
+                {{ user_role|title }}
               </div>
             </div>
             <i

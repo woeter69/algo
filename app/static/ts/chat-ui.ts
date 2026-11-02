@@ -6,10 +6,6 @@ export function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
-export function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
 export function createMessageElement(
   text: string,
   isSent: boolean = false,
