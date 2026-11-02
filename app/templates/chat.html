@@ -19,12 +19,7 @@
     <script src="{{ url_for('static', filename='js/go-websocket-client.js') }}"></script>
     <!-- Template data for JavaScript -->
     <script id="chat-data" type="application/json">
-      {{ {
-          "currentUserId": current_user_id,
-          "otherUserId": other_user_id,
-          "otherUserName": other_user_name,
-          "otherUserPfp": other_user_pfp
-      } | tojson | safe }}
+      {"currentUserId": {{ current_user_id }}, "otherUserId": {{ other_user_id }}, "otherUserName": "{{ other_user_name }}", "otherUserPfp": "{{ other_user_pfp }}"}
     </script>
     <script>
       // Parse server data from JSON script tag
@@ -75,12 +70,11 @@
                 <div class="conversation-header">
                   <h4>{{ chat[1] }}</h4>
                   <span class="conversation-time">
-                    {{ chat[4].strftime('%I:%M %p') if chat[4] else 'now' }}
+                    {{ format_ist_time(chat.4) }}
                   </span>
                 </div>
                 <p class="last-message">
-                  {{ (chat[3][:50] + '...') if chat[3] and chat[3]|length > 50
-                  else (chat[3] or 'No messages yet') }}
+                  {% if chat.3 %}{{ chat.3 }}{% else %}No messages yet{% endif %}
                 </p>
               </div>
             </div>

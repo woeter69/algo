@@ -311,15 +311,7 @@
 
     <!-- Pass data to JavaScript -->
     <script id="channels-data" type="application/json">
-      {{ {
-          "communities": communities or [],
-          "channels": channels or [],
-          "selectedCommunityId": selected_community_id,
-          "userId": user_id,
-          "currentUsername": session.username or "User",
-          "currentUserPfp": session.pfp_path or "",
-          "currentUserId": session.user_id
-      } | tojson | safe }}
+      {"communities": {{ communities|tojson }}, "channels": {{ channels|tojson }}, "selectedCommunityId": {{ selected_community_id }}, "userId": {{ user_id }}, "currentUsername": "{{ session.username }}", "currentUserPfp": "{{ session.pfp_path }}", "currentUserId": {{ session.user_id }}}
     </script>
     <script>
       // Parse server data from JSON script tag

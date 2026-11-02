@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -811,6 +812,20 @@ func main() {
 		log.Println("⚠️  No database connection (WebSocket will still work)")
 	}
 
+	seedFlag := flag.Bool("seed", false, "Seed the database with initial development data")
+	flag.Parse()
+
+	if *seedFlag {
+		if db == nil {
+			log.Fatal("❌ Cannot seed: database not connected")
+		}
+		if err := SeedDatabase(db); err != nil {
+			log.Fatalf("❌ Seeding failed: %v", err)
+		}
+		log.Println("✅ Database seeded successfully!")
+		return
+	}
+
 	// Initialize Session Store
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
@@ -831,32 +846,99 @@ func main() {
 	// Static files
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
 
-	// Core routes (migrated)
+	// Core routes
 	router.HandleFunc("/", handleHome).Methods("GET")
 	router.HandleFunc("/about", handleAbout).Methods("GET")
 	router.HandleFunc("/contact", handleContact).Methods("GET", "POST")
-	router.HandleFunc("/thanks", handleThanks).Methods("GET")
+	router.HandleFunc("/thanks", handleThanks).Methods("GET", "POST")
+	router.HandleFunc("/recommendations", handleRecommendations).Methods("GET")
 
-	// Auth routes (migrated)
+	// Auth routes (both /auth/... and root aliases)
 	router.HandleFunc("/auth/register", handleRegister).Methods("GET", "POST")
+	router.HandleFunc("/register", handleRegister).Methods("GET", "POST")
 	router.HandleFunc("/auth/login", handleLogin).Methods("GET", "POST")
+	router.HandleFunc("/login", handleLogin).Methods("GET", "POST")
 	router.HandleFunc("/auth/logout", handleLogout).Methods("GET")
+	router.HandleFunc("/logout", handleLogout).Methods("GET")
+	router.HandleFunc("/check_email", handleCheckEmail).Methods("GET")
+	router.HandleFunc("/verify/{token}", handleVerifyToken).Methods("GET")
+	router.HandleFunc("/confirmation", handleConfirmation).Methods("GET")
+	router.HandleFunc("/forgot_password", handleForgotPassword).Methods("GET", "POST")
 
+	// Dashboard routes
 	router.HandleFunc("/dashboard", handleDashboard).Methods("GET")
-	router.HandleFunc("/channels", handleChannelsView).Methods("GET")
-	router.HandleFunc("/create_community", handleCreateCommunity).Methods("GET", "POST")
+	router.HandleFunc("/user_dashboard", handleDashboard).Methods("GET")
+	router.HandleFunc("/admin_dashboard", handleAdminDashboard).Methods("GET", "POST")
+	router.HandleFunc("/admin/contact/{query_id:[0-9]+}/resolve", handleResolveContact).Methods("POST")
+	router.HandleFunc("/limited_dashboard", handleLimitedDashboard).Methods("GET")
+	router.HandleFunc("/verification_request", handleVerificationRequest).Methods("GET", "POST")
+	router.HandleFunc("/api/handle_verification_request", handleApiVerificationRequest).Methods("POST")
+
+	// Profile routes
+	router.HandleFunc("/profile", handleProfileView).Methods("GET")
+	router.HandleFunc("/profile/{username}", handleProfileView).Methods("GET")
+	router.HandleFunc("/api/profile/update", handleUpdateProfile).Methods("POST")
+	router.HandleFunc("/api/profile/experience", handleAddExperience).Methods("POST")
+	router.HandleFunc("/api/profile/experience/{exp_id:[0-9]+}", handleDeleteExperience).Methods("DELETE")
+	router.HandleFunc("/api/profile/education", handleAddEducation).Methods("POST")
+	router.HandleFunc("/api/profile/education/{detail_id:[0-9]+}", handleDeleteEducation).Methods("DELETE")
+	router.HandleFunc("/complete_profile", handleCompleteProfile).Methods("GET", "POST")
+	router.HandleFunc("/interests", handleInterests).Methods("GET", "POST")
+
+	// Settings routes
+	router.HandleFunc("/settings", handleSettingsView).Methods("GET", "POST")
+	router.HandleFunc("/api/update_account", handleUpdateAccount).Methods("POST")
+	router.HandleFunc("/api/update_privacy", handleUpdatePrivacy).Methods("POST")
+	router.HandleFunc("/api/update_preferences", handleUpdatePreferences).Methods("POST")
+	router.HandleFunc("/api/update_notifications", handleUpdateNotifications).Methods("POST")
+	router.HandleFunc("/api/change_password", handleChangePassword).Methods("POST")
+	router.HandleFunc("/api/update_profile_picture", handleUpdateProfilePicture).Methods("POST")
+	router.HandleFunc("/api/deactivate_account", handleDeactivateAccount).Methods("POST")
+	router.HandleFunc("/api/delete_account", handleDeleteAccount).Methods("POST")
+	router.HandleFunc("/api/logout_all_sessions", handleLogoutAllSessions).Methods("POST")
+	router.HandleFunc("/api/export_data", handleExportData).Methods("GET", "POST")
+
+	// Connections routes
 	router.HandleFunc("/connect", handleConnectView).Methods("GET")
 	router.HandleFunc("/requests", handleRequestsView).Methods("GET")
-	router.HandleFunc("/profile/{username}", handleProfileView).Methods("GET")
-	router.HandleFunc("/settings", handleSettingsView).Methods("GET", "POST")
+	router.HandleFunc("/api/send_connection_request", handleSendConnectionRequest).Methods("POST")
+	router.HandleFunc("/api/respond_connection_request", handleRespondConnectionRequest).Methods("POST")
+	router.HandleFunc("/api/get_connection_requests", handleGetConnectionRequests).Methods("GET")
+	router.HandleFunc("/api/cancel_connection_request", handleCancelConnectionRequest).Methods("POST")
+	router.HandleFunc("/api/alumni/search", handleSearchAlumni).Methods("GET")
+
+	// Communities & Channels routes
+	router.HandleFunc("/channels", handleChannelsView).Methods("GET")
+	router.HandleFunc("/create_community", handleCreateCommunity).Methods("GET", "POST")
+	router.HandleFunc("/communities", handleGetCommunities).Methods("GET")
+	router.HandleFunc("/api/communities", handleGetCommunities).Methods("GET")
+	router.HandleFunc("/communities/discover", handleDiscoverCommunities).Methods("GET")
+	router.HandleFunc("/api/communities/discover", handleDiscoverCommunities).Methods("GET")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/join", handleJoinCommunity).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/leave", handleLeaveCommunity).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/join-request", handleJoinCommunityRequest).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/invitations", handleInviteUserToCommunity).Methods("POST")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/members", handleGetCommunityMembers).Methods("GET")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/channels", handleGetChannels).Methods("GET")
+	router.HandleFunc("/api/communities/{community_id:[0-9]+}/channels", handleGetChannels).Methods("GET")
+	router.HandleFunc("/communities/{community_id:[0-9]+}/channels", handleCreateChannel).Methods("POST")
+	router.HandleFunc("/channels/{channel_id:[0-9]+}/messages", handleGetChannelMessages).Methods("GET")
+	router.HandleFunc("/channels/{channel_id:[0-9]+}/messages", handleSendChannelMessageHTTP).Methods("POST")
+	router.HandleFunc("/channels/{channel_id:[0-9]+}/members", handleGetChannelMembers).Methods("GET")
+	router.HandleFunc("/messages/{message_id:[0-9]+}/reactions", handleAddReaction).Methods("POST")
+
+	// Chat routes
 	router.HandleFunc("/chat", handleChatList).Methods("GET")
 	router.HandleFunc("/chat_list", handleChatList).Methods("GET")
 	router.HandleFunc("/chat/{username}", handleChat).Methods("GET")
+	router.HandleFunc("/api/online_status", handleOnlineStatus).Methods("GET")
+	router.HandleFunc("/api/upload_file", handleUploadChatFile).Methods("POST")
+	router.HandleFunc("/api/upload_image", handleUploadChatFile).Methods("POST")
+	router.HandleFunc("/api/search_users", handleSearchUsers).Methods("GET")
 
-	// API routes (migrated)
-	router.HandleFunc("/api/communities", handleGetCommunities).Methods("GET")
-	router.HandleFunc("/api/communities/{community_id}/channels", handleGetChannels).Methods("GET")
-	router.HandleFunc("/api/alumni/search", handleSearchAlumni).Methods("GET")
+	// User handle fallback route (e.g. /johndoe) - placed after specific static routes
+	router.HandleFunc("/{username:[a-zA-Z0-9_.-]+}", handleProfileView).Methods("GET")
+
 
 	// WebSocket endpoint
 	router.HandleFunc("/ws", hub.handleWebSocket)

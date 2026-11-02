@@ -82,25 +82,13 @@
                   <option value="">Select your status...</option>
                   <option
                     value="student"
-                    {%
-                    if
-                    form_data.requested_role=""
-                    ="student"
-                    %}selected{%
-                    endif
-                    %}
+                    {% if form_data.requested_role == "student" %}selected{% endif %}
                   >
                     Current Student
                   </option>
                   <option
                     value="alumni"
-                    {%
-                    if
-                    form_data.requested_role=""
-                    ="alumni"
-                    %}selected{%
-                    endif
-                    %}
+                    {% if form_data.requested_role == "alumni" %}selected{% endif %}
                   >
                     Alumni/Graduate
                   </option>
@@ -129,22 +117,7 @@
                     {% for year in range(1980, 2031) %}
                     <option
                       value="{{ year }}"
-                      {%
-                      if
-                      form_data.graduation_year
-                      and
-                      form_data.graduation_year|string=""
-                      ="year|string"
-                      %}selected{%
-                      elif
-                      year=""
-                      ="2024"
-                      and
-                      not
-                      form_data.graduation_year
-                      %}selected{%
-                      endif
-                      %}
+                      {% if form_data.graduation_year and form_data.graduation_year == year %}selected{% elif year == 2024 and not form_data.graduation_year %}selected{% endif %}
                     >
                       {{ year }}
                     </option>

@@ -115,8 +115,7 @@
               {{ chat[1] }}
             </div>
             <div class="text-gray-600 text-sm mb-2 leading-relaxed">
-              {{ (chat[3][:50] + '...') if chat[3] and chat[3]|length > 50 else
-              (chat[3] or 'No messages yet') }}
+              {% if chat.3 %}{{ chat.3 }}{% else %}No messages yet{% endif %}
             </div>
             <div class="text-gray-400 text-xs">
               {% if chat[4] %} {{ format_ist_time(chat[4], '%b %d, %I:%M %p') }}

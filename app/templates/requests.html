@@ -46,11 +46,15 @@
             {% endif %}
           </ul>
           <div class="user-profile" id="userprofile">
-            {% set user_full_name = (current_user[1] or '') + ' ' +
-            (current_user[2] or '') if current_user else session.get('username',
-            'User') %} {% set user_pfp = current_user[4] if current_user else
-            session.get('pfp_path', '') %} {% set user_role = current_user[3] if
-            current_user else session.get('role', 'user') %}
+            {% if current_user %}
+              {% set user_full_name = current_user.1 + " " + current_user.2 %}
+              {% set user_pfp = current_user.4 %}
+              {% set user_role = current_user.3 %}
+            {% else %}
+              {% set user_full_name = session.username %}
+              {% set user_pfp = session.pfp_path %}
+              {% set user_role = session.role %}
+            {% endif %}
             <img
               src="{% if user_pfp %}{{ user_pfp }}{% else %}{{ generate_default_avatar(user_full_name) }}{% endif %}"
               alt="profile"
@@ -59,12 +63,10 @@
             />
             <div class="user-info">
               <div class="user-name">
-                {{ user_full_name.strip() if user_full_name.strip() else
-                current_user[0] if current_user else session.get('username',
-                'User') }}
+                {{ user_full_name }}
               </div>
               <div class="user-role">
-                {{ user_role.title() if user_role else 'User' }}
+                {{ user_role|title }}
               </div>
             </div>
             <i
@@ -197,7 +199,7 @@
                     />
                     {% endif %}
                     <div class="avatar-fallback">
-                      {{ request.name[:2].upper() }}
+                      {{ request.name|slice:":2"|upper }}
                     </div>
                   </div>
                   <div class="user-info">
@@ -270,7 +272,7 @@
                     />
                     {% endif %}
                     <div class="avatar-fallback">
-                      {{ request.name[:2].upper() }}
+                      {{ request.name|slice:":2"|upper }}
                     </div>
                   </div>
                   <div class="user-info">
@@ -340,7 +342,7 @@
                     />
                     {% endif %}
                     <div class="avatar-fallback">
-                      {{ connection.name[:2].upper() }}
+                      {{ connection.name|slice:":2"|upper }}
                     </div>
                   </div>
                   <div class="user-info">
@@ -391,12 +393,7 @@
 
     <!-- Pass data to TypeScript -->
     <script id="requests-data" type="application/json">
-      {{ {
-          "pendingRequests": pending_requests,
-          "sentRequests": sent_requests,
-          "connections": connections,
-          "connectionsCount": connections_count
-      } | tojson | safe }}
+      {"pendingRequests": {{ pending_requests|tojson }}, "sentRequests": {{ sent_requests|tojson }}, "connections": {{ connections|tojson }}, "connectionsCount": {{ connections_count }}}
     </script>
     <script>
       // Parse server data from JSON script tag

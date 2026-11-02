@@ -124,7 +124,7 @@
                 type="text"
                 id="universityName"
                 name="universityName"
-                value="{{ education_data[1] if education_data and education_data[1] else (user_data[7] if user_data[7] else '') }}"
+                value="{% if education_data and education_data.1 %}{{ education_data.1 }}{% elif user_data and user_data.7 %}{{ user_data.7 }}{% endif %}"
               />
             </div>
             <div class="form-group">
@@ -133,7 +133,7 @@
                 type="number"
                 id="graduationYear"
                 name="graduationYear"
-                value="{{ user_data[6] if user_data[6] else (education_data[4] if education_data and education_data[4] else '') }}"
+                value="{% if user_data and user_data.6 %}{{ user_data.6 }}{% elif education_data and education_data.4 %}{{ education_data.4 }}{% endif %}"
                 min="1950"
                 max="2035"
               />
@@ -154,7 +154,7 @@
                 type="text"
                 id="major"
                 name="major"
-                value="{{ education_data[3] if education_data and education_data[3] else (user_data[8] if user_data[8] else '') }}"
+                value="{% if education_data and education_data.3 %}{{ education_data.3 }}{% elif user_data and user_data.8 %}{{ user_data.8 }}{% endif %}"
                 placeholder="e.g., Computer Science"
               />
             </div>
@@ -180,7 +180,7 @@
               name="interests"
               rows="3"
               placeholder="Technology, AI, Web Development, etc."
-            >{{ user_interests|join(', ') if user_interests else '' }}</textarea>
+            >{{ user_interests|join:", " }}</textarea>
           </div>
         </div>
 

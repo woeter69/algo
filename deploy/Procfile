@@ -1,1 +1,1 @@
-web: gunicorn "app.src.run:app"
+web: cd app/src && go build -o websocket-server . && ./websocket-server

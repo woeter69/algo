@@ -1,54 +1,49 @@
 #!/bin/bash
 
-# Quick test script to verify both servers can start
+# Test script to verify the Go server builds and tests pass
 
-echo "🧪 Testing ALGO Application Stack..."
-echo "===================================="
+echo "🧪 Testing AlumniGo Go Server..."
+echo "=================================="
 
 # Test Go build
-echo "1️⃣ Testing Go WebSocket Server build..."
+echo "1️⃣  Testing Go server build..."
 cd app/src
-if go build -o websocket-server .; then
+if go build -o /tmp/test-algo-server .; then
     echo "✅ Go server builds successfully"
-    rm -f websocket-server
+    rm -f /tmp/test-algo-server
 else
     echo "❌ Go server build failed"
     exit 1
 fi
-cd ../..
 
-# Test Python syntax
-echo "2️⃣ Testing Python Flask Server syntax..."
-if .venv/bin/python -m py_compile app/src/run.py; then
-    echo "✅ Python server syntax is valid"
+# Run tests
+echo "2️⃣  Running Go tests..."
+if go test -v ./...; then
+    echo "✅ All tests pass"
 else
-    echo "❌ Python server has syntax errors"
+    echo "❌ Some tests failed"
     exit 1
 fi
 
-# Test dependencies
-echo "3️⃣ Checking dependencies..."
-
-# Check Go dependencies
-echo "   🔍 Go dependencies..."
-cd app/src
+# Verify dependencies
+echo "3️⃣  Checking Go module dependencies..."
 if go mod verify; then
-    echo "   ✅ Go dependencies verified"
+    echo "✅ Go dependencies verified"
 else
-    echo "   ❌ Go dependencies have issues"
+    echo "❌ Go dependencies have issues"
     exit 1
 fi
-cd ../..
 
-# Check Python dependencies (basic imports)
-echo "   🔍 Python dependencies..."
-if .venv/bin/python -c "import flask, psycopg2, bcrypt"; then
-    echo "   ✅ Python dependencies available"
+# Run vet
+echo "4️⃣  Running go vet..."
+if go vet ./...; then
+    echo "✅ go vet passed"
 else
-    echo "   ❌ Python dependencies missing"
-    echo "   📥 Install with: pip3 install flask psycopg2-binary flask-bcrypt"
+    echo "⚠️  go vet reported issues (non-fatal)"
 fi
+
+cd ../..
 
 echo ""
-echo "✅ All tests passed!"
-echo "🚀 Ready to run: ./start-all.sh"
+echo "✅ All checks passed!"
+echo "🚀 Ready to run: ./scripts/start-all.sh"
